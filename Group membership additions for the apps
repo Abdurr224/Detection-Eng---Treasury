@@ -1,0 +1,59 @@
+let GroupsToCheck = dynamic([
+    "d58d90ff-8654-40c1-bde0-94222c6487c3",
+    "0bc6a87d-b1b5-4edf-a496-33d4dadf8ac9", 
+    "41c16cfc-3916-4837-b8fd-10540a4f62b7",
+    "93f64530-9d25-4325-ba1c-d7c8605e070a"
+]);
+let AuditGroupChanges = AuditLogs
+    | where TargetResources[1].id in (GroupsToCheck)
+    | extend GroupId = TargetResources[1].id
+    | extend OldValue = tostring(TargetResources[0].modifiedProperties[1].oldValue)
+    | extend NewValue = tostring(TargetResources[0].modifiedProperties[1].newValue)
+    | extend MemberChanged = coalesce(NewValue, OldValue)
+    | extend MemberChanged = trim('"', MemberChanged)
+   | extend Initiator = coalesce(
+    tostring(InitiatedBy.user.userPrincipalName), 
+    tostring(InitiatedBy.app.displayName), 
+    "System")
+| extend InitiatorIP = tostring(InitiatedBy.user.ipAddress)
+| where Initiator !contains "sync"
+    | project TimeGenerated, GroupId, MemberChanged, OperationName, Initiator, InitiatorIP, Target = TargetResources.[0].userPrincipalName;
+let IdentityExpansion =
+    IdentityInfo
+    | where TimeGenerated >= ago(30d)
+    | mv-expand GroupMembership
+    | extend Group = tostring(GroupMembership)
+    | project Group, AccountName, Department, JobTitle, 
+              Users = strcat(AccountName, " (", JobTitle, ")")
+    | summarize 
+        Users = any(Users),
+        Department = any(Department),
+        JobTitle = any(JobTitle)
+      by Group, AccountName;
+let DeptCountsPerGroup =
+    IdentityExpansion
+    | summarize DistinctDeptCount = dcount(AccountName) by Group, Department;
+let DeptListByGroup =
+    DeptCountsPerGroup
+    | extend DeptLabel = strcat(Department, " (", tostring(DistinctDeptCount), ")")
+    | summarize DistinctDepartmentsList = make_list(DeptLabel) by Group;
+let MembersPerGroup =
+    IdentityExpansion
+    | summarize 
+        Members = make_set(Users),
+        //MemberCount = strcat(tostring(dcount(AccountName)), " Members")
+        MemberCount = dcount(AccountName)
+      by Group;
+let ops = 
+ AuditGroupChanges
+ | summarize count() by ops = OperationName;
+let GroupSummary =
+    MembersPerGroup
+    | join kind=leftouter DeptListByGroup on Group
+    | extend DistinctDepartmentsList = coalesce(DistinctDepartmentsList, dynamic([]));
+AuditGroupChanges
+| join kind=inner GroupSummary on $left.MemberChanged == $right.Group
+| join kind= inner ops on $left.OperationName==$right.ops
+| project-away GroupId, Group1, Group, count_, ops
+| where OperationName == "Add member to group"
+| project-reorder TimeGenerated, MemberChanged, OperationName,Initiator,Target, InitiatorIP, DistinctDepartmentsList
