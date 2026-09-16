@@ -1,0 +1,107 @@
+et SensitiveAppKeywords = dynamic(["ICD", "FIS", "Finastra", "360T"]);
+let policy_changes = AuditLogs
+    | where TimeGenerated > ago(24h)
+    | where OperationName in ("Update conditional access policy", "Delete conditional access policy")
+    | mv-expand TargetResources
+    | mv-expand TargetResources.modifiedProperties
+    | extend NewValueConditions = parse_json(tostring(parse_json(TargetResources_modifiedProperties.newValue))).conditions
+    | extend OldValueConditions = parse_json(tostring(parse_json(TargetResources_modifiedProperties.oldValue))).conditions
+    | extend NewValueGrandControls = parse_json(tostring(parse_json(TargetResources_modifiedProperties.newValue))).grantControls
+    | extend OldValueGrandControls = parse_json(tostring(parse_json(TargetResources_modifiedProperties.oldValue))).grantControls
+    | extend NewValueSessionControls = parse_json(tostring(parse_json(TargetResources_modifiedProperties.newValue))).sessionControls
+    | extend OldValueSessionControls = parse_json(tostring(parse_json(TargetResources_modifiedProperties.oldValue))).sessionControls
+    | extend NewState = parse_json(tostring(parse_json(TargetResources_modifiedProperties.newValue))).state
+    | extend OldState = parse_json(tostring(parse_json(TargetResources_modifiedProperties.oldValue))).state
+    | extend
+        CountNewUserIncludes = array_length(NewValueConditions.users.includeUsers),
+        CountNewRoleIncludes = array_length(NewValueConditions.users.includeRoles),
+        CountNewGroupIncludes = array_length(NewValueConditions.users.includeGroups),
+        CountNewUserActionIncludes = array_length(NewValueConditions.applications.inlcudeUserActions),
+        CountNewAuthContextIncludes = array_length(NewValueConditions.applications.includeAuthenticationContextClassReferences),
+        CountNewApplicationIncludes = array_length(NewValueConditions.applications.inlcudeApplications),
+        CountNewLocationIncludes = array_length(NewValueConditions.locations.includeLocations),
+        CountNewPlatformIncludes = array_length(NewValueConditions.platforms.includePlatforms)
+    | extend
+        CountOldUserIncludes = array_length(OldValueConditions.users.includeUsers),
+        CountOldRoleIncludes = array_length(OldValueConditions.users.includeRoles),
+        CountOldGroupIncludes = array_length(OldValueConditions.users.includeGroups),
+        CountOldUserActionIncludes = array_length(OldValueConditions.applications.inlcudeUserActions),
+        CountOldAuthContextIncludes = array_length(OldValueConditions.applications.includeAuthenticationContextClassReferences),
+        CountOldApplicationIncludes = array_length(OldValueConditions.applications.inlcudeApplications),
+        CountOldLocationIncludes = array_length(OldValueConditions.locations.includeLocations),
+        CountOldPlatformIncludes = array_length(OldValueConditions.platforms.includePlatforms)
+    | extend
+        CountNewUserExcludes = array_length(NewValueConditions.users.excludeUsers),
+        CountNewRoleExcludes = array_length(NewValueConditions.users.excludeRoles),
+        CountNewGroupExcludes = array_length(NewValueConditions.users.excludeGroups),
+        CountNewApplicationExcludes = array_length(NewValueConditions.applications.excludeApplications),
+        CountNewLocationExcludes = array_length(NewValueConditions.locations.excludeLocations),
+        CountNewPlatformExcludes = array_length(NewValueConditions.platforms.excludePlatforms)
+    | extend
+        CountOldUserExcludes = array_length(OldValueConditions.users.excludeUsers),
+        CountOldRoleExcludes = array_length(OldValueConditions.users.excludeRoles),
+        CountOldGroupExcludes = array_length(OldValueConditions.users.excludeGroups),
+        CountOldApplicationExcludes = array_length(OldValueConditions.applications.excludeApplications),
+        CountOldLocationExcludes = array_length(OldValueConditions.locations.excludeLocations),
+        CountOldPlatformExcludes = array_length(OldValueConditions.platforms.excludePlatforms)
+    | extend Reasons = dynamic([])
+    | extend Reasons = iff(CountNewUserIncludes < CountOldUserIncludes, array_concat(Reasons, dynamic(["User removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewRoleIncludes < CountOldRoleIncludes, array_concat(Reasons, dynamic(["Role removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewGroupIncludes < CountOldGroupIncludes, array_concat(Reasons, dynamic(["Group removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewUserExcludes > CountOldUserExcludes, array_concat(Reasons, dynamic(["User added to exclude"])), Reasons)
+    | extend Reasons = iff(CountNewRoleExcludes > CountOldRoleExcludes, array_concat(Reasons, dynamic(["Role added to exclude"])), Reasons)
+    | extend Reasons = iff(CountNewGroupExcludes > CountOldGroupExcludes, array_concat(Reasons, dynamic(["Group added to exclude"])), Reasons)
+    | extend Reasons = iff(CountNewUserActionIncludes < CountOldUserActionIncludes, array_concat(Reasons, dynamic(["User action removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewAuthContextIncludes < CountOldAuthContextIncludes, array_concat(Reasons, dynamic(["Authentication context removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewApplicationIncludes < CountOldApplicationIncludes, array_concat(Reasons, dynamic(["Application removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewApplicationExcludes > CountOldApplicationExcludes, array_concat(Reasons, dynamic(["Application added to exclude"])), Reasons)
+    | extend Reasons = iff(CountNewLocationIncludes < CountOldLocationIncludes, array_concat(Reasons, dynamic(["Locations removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewLocationExcludes > CountOldLocationExcludes, array_concat(Reasons, dynamic(["Locations added to exclude"])), Reasons)
+    | extend Reasons = iff(CountNewPlatformIncludes < CountOldPlatformIncludes, array_concat(Reasons, dynamic(["Platforms removed from include"])), Reasons)
+    | extend Reasons = iff(CountNewPlatformExcludes > CountOldPlatformExcludes, array_concat(Reasons, dynamic(["Platforms added to exclude"])), Reasons)
+    // Flag general changes
+    | extend Reasons = iff(tostring(NewValueConditions.applications.applicationFilter) != tostring(OldValueConditions.applications.applicationFilter), array_concat(Reasons, dynamic(["Application filter changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueConditions.clientAppTypes) != tostring(OldValueConditions.clientAppTypes), array_concat(Reasons, dynamic(["Client app type changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueConditions.userRiskLevels) != tostring(OldValueConditions.userRiskLevels), array_concat(Reasons, dynamic(["User risk levels changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueConditions.signInRiskLevels) != tostring(OldValueConditions.signInRiskLevels), array_concat(Reasons, dynamic(["Sign-in risk levels changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueConditions.servicePrincipalRiskLevels) != tostring(OldValueConditions.servicePrincipalRiskLevels), array_concat(Reasons, dynamic(["Service Principal risk levels changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueGrandControls) != tostring(OldValueGrandControls), array_concat(Reasons, dynamic(["Grant controls changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueSessionControls) != tostring(OldValueSessionControls), array_concat(Reasons, dynamic(["Session controls changed"])), Reasons)
+    | extend Reasons = iff(tostring(NewValueConditions.devices) != tostring(OldValueConditions.devices), array_concat(Reasons, dynamic(["Device conditions changed"])), Reasons)
+    | extend Reasons = iff(tostring(OldValueConditions.locations.includeLocations) contains "all" and tostring(NewValueConditions.locations.includeLocations) !contains "all", array_concat(Reasons, dynamic(["Include locations changed from all to specific"])), Reasons)
+    | extend Reasons = iff(tostring(OldValueConditions.platforms.includePlatforms) contains "all" and tostring(NewValueConditions.platforms.includePlatforms) !contains "all", array_concat(Reasons, dynamic(["Include platforms changed from all to specific"])), Reasons)
+    | extend Reasons = iff(tostring(OldValueConditions.users.includeUsers) contains "all" and tostring(NewValueConditions.users.includeUsers) !contains "all", array_concat(Reasons, dynamic(["Include users changed from all to specific"])), Reasons)
+    | extend Reasons = iff(tostring(OldValueConditions.applications.includeApplications) contains "all" and tostring(NewValueConditions.applications.includeApplications) !contains "all", array_concat(Reasons, dynamic(["Include applications changed from all to specific"])), Reasons)
+    | extend Reasons = iff(tostring(OldState) == "enabled" and tostring(NewState) != "enabled", array_concat(Reasons, dynamic(["Policy was disabled"])), Reasons)
+    | extend Reasons = iff(OperationName == "Delete conditional access policy", array_concat(Reasons, dynamic(["Policy was deleted"])), Reasons)
+    | extend PolicyName = tostring(TargetResources.displayName)
+    | extend ModifiedBy = tostring(InitiatedBy.user.userPrincipalName)
+    | extend ModifiedBy = parse_json(tostring(InitiatedBy.app)).displayName
+    | project
+        PolicyName,
+        ModifiedBy,
+        ChangeTime = TimeGenerated,
+        Reasons,
+        OperationName,
+        TargetResources;
+SigninLogs
+| where AppDisplayName has_any (SensitiveAppKeywords)
+| mv-expand ConditionalAccessPolicies
+| extend EvaluatedPolicy = tostring(ConditionalAccessPolicies.displayName)
+| extend PolicyResult = tostring(ConditionalAccessPolicies.result)
+| join kind=inner policy_changes
+    on $left.EvaluatedPolicy == $right.PolicyName
+| where TimeGenerated > ChangeTime
+| summarize
+    SignInTime              = replace(@'["\[\]]', "", tostring(make_set(TimeGenerated))),
+    UserPrincipalName       = replace(@'["\[\]]', "", tostring(make_set(UserPrincipalName))),
+    AppDisplayName          = replace(@'["\[\]]', "", tostring(make_set(AppDisplayName))),
+    PolicyName              = replace(@'["\[\]]', "", tostring(make_set(EvaluatedPolicy))),
+    PolicyResult            = replace(@'["\[\]]', "", tostring(make_set(PolicyResult))),
+    ConditionalAccessStatus = replace(@'["\[\]]', "", tostring(make_set(ConditionalAccessStatus))),
+    IPAddress               = replace(@'["\[\]]', "", tostring(make_set(IPAddress))),
+    ModifiedBy              = replace(@'["\[\]]', "", tostring(make_set(ModifiedBy))),
+    ChangeReasons           = replace(@'["\[\]]', "", tostring(make_set(Reasons))),
+    Raw                     = replace(@'["\[\]]', "", tostring(make_set(TargetResources)))
+    by ModifiedTime = ChangeTime
+| where PolicyResult !contains "not"
