@@ -1,0 +1,2092 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Treasury Application and Groups Monitoring\n### Track Application activity and privileged group membership across managed environments"
+      },
+      "name": "header"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "region-param",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "region",
+                  "label": "Region",
+                  "type": 2,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "Resources\r\n| where type =~ \"microsoft.operationsmanagement/solutions\"\r\n| where name has \"SecurityInsights\"\r\n| summarize WorkspaceCount = count(name) by location\r\n| order by location asc\r\n| project value=location, display=strcat(location,'(',WorkspaceCount,')')",
+                  "crossComponentResources": [
+                    "value::selected"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "selectAllValue": "*",
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "subscription-param",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Subscription",
+                  "type": 6,
+                  "isRequired": true,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "includeAll": false,
+                    "showDefault": false
+                  },
+                  "jsonData": "[{\"value\": ": true}]"
+                },
+                {
+                  "id": "workspace-param",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Workspace",
+                  "type": 5,
+                  "isRequired": true,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "resources\n| where type =~ 'microsoft.operationalinsights/workspaces'\n| extend customerID = trim(' ', tostring(properties.customerId))\n| project id, customerID, name=tolower(name)\n|join \n(\n\tresources\n\t| where type =~ \"microsoft.operationsmanagement/solutions\"\n\t| where name has \"SecurityInsights\"\n\t| parse name with * '(' s_workspace ')'*\n\t| project name=tolower(s_workspace)\n) on name\n| project tolower(id), customerID, name",
+                  "crossComponentResources": [
+                    "{Subscription}"
+                  ],
+                  "typeSettings": {
+                    "resourceTypeFilter": {
+                      "microsoft.operationalinsights/workspaces": true
+                    },
+                    "additionalResourceOptions": [
+                      "value::all"
+                    ],
+                    "showDefault": false
+                  },
+                  "defaultValue": "value::all",
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources",
+                  "value": [
+                    "value::all"
+                  ]
+                },
+                {
+                  "id": "timerange-param",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "TimeRange",
+                  "label": "Time Range",
+                  "type": 4,
+                  "isRequired": true,
+                  "value": {
+                    "durationMs": 10368000000
+                  },
+                  "typeSettings": {
+                    "selectableValues": [
+                      {
+                        "durationMs": 86400000
+                      },
+                      {
+                        "durationMs": 172800000
+                      },
+                      {
+                        "durationMs": 259200000
+                      },
+                      {
+                        "durationMs": 604800000
+                      },
+                      {
+                        "durationMs": 1209600000
+                      },
+                      {
+                        "durationMs": 2592000000
+                      },
+                      {
+                        "durationMs": 10368000000
+                      }
+                    ],
+                    "allowCustom": true
+                  }
+                },
+                {
+                  "id": "selectedtab-param",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "selectedTab",
+                  "type": 1,
+                  "isHiddenWhenLocked": true,
+                  "value": "group1"
+                }
+              ],
+              "style": "above",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters"
+          }
+        ],
+        "exportParameters": true
+      },
+      "name": "parameter-group"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "tabStyle": "bigger",
+        "links": [
+          {
+            "id": "tab-group1",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "FIS ",
+            "subTarget": "group1",
+            "style": "link"
+          },
+          {
+            "id": "tab-group2",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "360T",
+            "subTarget": "group2",
+            "style": "link"
+          },
+          {
+            "id": "tab-group3",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "Finastra",
+            "subTarget": "group3",
+            "style": "link"
+          },
+          {
+            "id": "tab-group4",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "ICD",
+            "subTarget": "group4",
+            "style": "link"
+          },
+          {
+            "id": "dab47354-b869-4e02-b765-6d1f469e7c57",
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "Alerts",
+            "subTarget": "Alerts",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "navigation-tabs",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Application Sign-In Activity\n---"
+            },
+            "name": "subheading-group-activity - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"Finastra - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nlet CountryCoords = datatable(CountryCode:string, DefaultLat:real, DefaultLon:real)\r\n[\r\n    \"CN\", 35.8617, 104.1954,\r\n    \"GB\", 51.5074, -0.1278,\r\n    \"US\", 37.0902, -95.7129,\r\n    \"DE\", 51.1657, 10.4515,\r\n    \"FR\", 46.2276, 2.2137,\r\n    \"IN\", 20.5937, 78.9629,\r\n    \"AU\", -25.2744, 133.7751,\r\n    \"JP\", 36.2048, 138.2529,\r\n    \"SG\", 1.3521, 103.8198,\r\n    \"HK\", 22.3193, 114.1694,\r\n    \"NL\", 52.1326, 5.2913,\r\n    \"IE\", 53.1424, -7.6921\r\n];\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend RawLatitude = toreal(Location.geoCoordinates.latitude)\r\n| extend RawLongitude = toreal(Location.geoCoordinates.longitude)\r\n| extend City = tostring(Location.city)\r\n| extend State = tostring(Location.state)\r\n| extend CountryOrRegion = tostring(Location.countryOrRegion)\r\n| join kind=leftouter CountryCoords on $left.CountryOrRegion == $right.CountryCode\r\n| extend Latitude = iff(isempty(RawLatitude), DefaultLat, RawLatitude)\r\n| extend Longitude = iff(isempty(RawLongitude), DefaultLon, RawLongitude)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=leftouter IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by Latitude, Longitude, City, State, CountryOrRegion, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", tostring(CountryOrRegion)), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| where isnotempty(Latitude) and isnotempty(Longitude)\r\n| sort by Events desc",
+              "size": 3,
+              "title": "Finastra Sign-in Map",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "map",
+              "mapSettings": {
+                "locInfo": "LatLong",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "sizeSettings": "Latitude",
+                "sizeAggregation": "Sum",
+                "labelSettings": "City",
+                "legendMetric": "Events",
+                "legendAggregation": "Average",
+                "itemColorSettings": {
+                  "nodeColorField": "Latitude",
+                  "colorAggregation": "Sum",
+                  "type": "heatmap",
+                  "heatmapPalette": "greenRed"
+                }
+              }
+            },
+            "customWidth": "60",
+            "name": "signin-map-g3",
+            "styleSettings": {
+              "maxWidth": "60"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"Finastra - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 3,
+              "title": "Events Per User",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "scatterchart",
+              "chartSettings": {
+                "xAxis": "UserLoc_IPLoc",
+                "yAxis": [
+                  "Events"
+                ],
+                "group": "UserPrincipalName",
+                "createOtherGroup": null,
+                "showMetrics": false,
+                "showLegend": true
+              }
+            },
+            "customWidth": "40",
+            "name": "activity-by-dept-g3",
+            "styleSettings": {
+              "maxWidth": "40"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"Finastra - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(90d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 0,
+              "title": "Finastra Sign-in Details",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Result",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "SUCCESS",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "FAILURE",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TrustDev",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Managed",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unmanaged",
+                          "representation": "orange",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "CredsLeaked",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "false",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "ASN_SuccessCount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "blue"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "Events",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "signin-table-g3"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Group Activity\n---"
+            },
+            "name": "subheading-group-activity"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AuditLogs\n| where TimeGenerated > ago({TimeRange:seconds}s)\n| where tostring(TargetResources[1].id) == \"41c16cfc-3916-4837-b8fd-10540a4f62b7\"\n| extend InitiatedBy = coalesce(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName), \"System\")\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\n| summarize Count = count() by bin(TimeGenerated, {TimeRange:grain}), ChangeType, InitiatedBy\n| project TimeGenerated, ChangeType, Count, InitiatedBy",
+              "size": 0,
+              "title": "Changes Timeline",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Added",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Removed",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "70",
+            "name": "chart-timeline-g3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Chart = IdentityInfo\r\n| where TimeGenerated >= ago(30d)\r\n    | where GroupMembership contains \"Finastra Prod SSO\"\r\n    | summarize make_set(Department), make_list(JobTitle),count() by AccountUPN;\r\nChart\r\n| summarize count() by tostring(set_Department)\r\n| extend DeptString = replace(@'[\\[\\]\"]', \"\", tostring(set_Department))\r\n| extend Department = iff(DeptString =~ \"\", \"Unlisted\",DeptString)\r\n| project Department, count_",
+              "size": 3,
+              "aggregation": 4,
+              "title": "Group Department Distribution",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "customWidth": "30",
+            "name": "query - 4",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let GroupId = \"41c16cfc-3916-4837-b8fd-10540a4f62b7\";\r\nlet BaseData = AuditLogs\r\n| where TimeGenerated > ago({TimeRange:seconds}s)\r\n| where tostring(TargetResources[1].id) == GroupId\r\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\r\n| extend Initiator = coalesce(\r\n    tostring(InitiatedBy.user.userPrincipalName), \r\n    tostring(InitiatedBy.app.displayName), \r\n    \"System\")\r\n| extend InitiatorIP = tostring(InitiatedBy.user.ipAddress)\r\n| where Initiator !contains \"sync\"\r\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\r\n| extend OldValue = tostring(TargetResources[0].modifiedProperties[1].oldValue)\r\n| extend NewValue = tostring(TargetResources[0].modifiedProperties[1].newValue)\r\n| extend MemberChanged = trim('\"', coalesce(NewValue, OldValue))\r\n| extend Target = tostring(TargetResources[0].userPrincipalName);\r\nlet Stats = BaseData\r\n| summarize \r\n    AddedCount = countif(ChangeType == \"Added\"), \r\n    RemovedCount = countif(ChangeType == \"Removed\"), \r\n    TotalChanges = count()\r\n    by Initiator;\r\nBaseData\r\n| join kind=leftouter Stats on Initiator\r\n| order by TimeGenerated desc\r\n| project\r\n    TimeGenerated,\r\n    ChangeType,\r\n    Target,\r\n    Initiator,\r\n    InitiatorIP,\r\n    TotalAddedbyInitiator = AddedCount,\r\n    TotalRemovedbyInitiator = RemovedCount,\r\n    TotalChangesbyInitiator = TotalChanges",
+              "size": 0,
+              "title": "Detailed Change Log with Initiator Stats",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ChangeType",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Added",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Removed",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalAddedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "green"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalRemovedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "red"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalChangesbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "IdentityInfo\r\n| where TimeGenerated >= ago(30d)\r\n| where GroupMembership contains \"Finastra Prod SSO\"\r\n| summarize count() by AccountUPN, JobTitle, Department, Group = \"Finastra Prod SSO\"\r\n| project-away count_\r\n",
+              "size": 0,
+              "title": "Group List of Members",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "gridSettings": {
+                "filter": true,
+                "hierarchySettings": {
+                  "treeType": 1,
+                  "groupBy": [
+                    "Group",
+                    "AccountUPN"
+                  ],
+                  "expandTopLevel": false
+                }
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "group3"
+      },
+      "name": "group3-section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Application Sign-In Activity\n---"
+            },
+            "customWidth": "100",
+            "name": "subheading-group-activity - Copy",
+            "styleSettings": {
+              "margin": "50",
+              "padding": "20"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"360T - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nlet CountryCoords = datatable(CountryCode:string, DefaultLat:real, DefaultLon:real)\r\n[\r\n    \"CN\", 35.8617, 104.1954,\r\n    \"GB\", 51.5074, -0.1278,\r\n    \"US\", 37.0902, -95.7129,\r\n    \"DE\", 51.1657, 10.4515,\r\n    \"FR\", 46.2276, 2.2137,\r\n    \"IN\", 20.5937, 78.9629,\r\n    \"AU\", -25.2744, 133.7751,\r\n    \"JP\", 36.2048, 138.2529,\r\n    \"SG\", 1.3521, 103.8198,\r\n    \"HK\", 22.3193, 114.1694,\r\n    \"NL\", 52.1326, 5.2913,\r\n    \"IE\", 53.1424, -7.6921\r\n];\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend RawLatitude = toreal(Location.geoCoordinates.latitude)\r\n| extend RawLongitude = toreal(Location.geoCoordinates.longitude)\r\n| extend City = tostring(Location.city)\r\n| extend State = tostring(Location.state)\r\n| extend CountryOrRegion = tostring(Location.countryOrRegion)\r\n| join kind=leftouter CountryCoords on $left.CountryOrRegion == $right.CountryCode\r\n| extend Latitude = iff(isempty(RawLatitude), DefaultLat, RawLatitude)\r\n| extend Longitude = iff(isempty(RawLongitude), DefaultLon, RawLongitude)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=leftouter IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by Latitude, Longitude, City, State, CountryOrRegion, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", tostring(CountryOrRegion)), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| where isnotempty(Latitude) and isnotempty(Longitude)\r\n| sort by Events desc",
+              "size": 3,
+              "title": "360T Sign-in Map",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "map",
+              "mapSettings": {
+                "locInfo": "LatLong",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "sizeSettings": "Latitude",
+                "sizeAggregation": "Sum",
+                "labelSettings": "City",
+                "legendMetric": "Events",
+                "legendAggregation": "Sum",
+                "itemColorSettings": {
+                  "nodeColorField": "Latitude",
+                  "colorAggregation": "Sum",
+                  "type": "heatmap",
+                  "heatmapPalette": "greenRed"
+                }
+              }
+            },
+            "customWidth": "55",
+            "name": "signin-map-g2",
+            "styleSettings": {
+              "margin": "0",
+              "maxWidth": "55"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"360T - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 3,
+              "title": "Events Per User",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "scatterchart",
+              "chartSettings": {
+                "xAxis": "UserLoc_IPLoc",
+                "yAxis": [
+                  "Events"
+                ],
+                "group": "UserPrincipalName",
+                "createOtherGroup": null,
+                "showMetrics": false,
+                "showLegend": true
+              }
+            },
+            "customWidth": "45",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "45"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"360T - Prod\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(90d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 0,
+              "title": "360T Sign-in Details",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Result",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "SUCCESS",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "FAILURE",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TrustDev",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Managed",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unmanaged",
+                          "representation": "orange",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "CredsLeaked",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "false",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "ASN_SuccessCount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "blue"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "Events",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "signin-table-g2"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Group Activity\n---"
+            },
+            "customWidth": "100",
+            "name": "subheading-group-activity",
+            "styleSettings": {
+              "margin": "50",
+              "padding": "20"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AuditLogs\n| where TimeGenerated > ago({TimeRange:seconds}s)\n| where tostring(TargetResources[1].id) == \"0bc6a87d-b1b5-4edf-a496-33d4dadf8ac9\"\n| extend InitiatedBy = coalesce(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName), \"System\")\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\n| summarize Count = count() by bin(TimeGenerated, {TimeRange:grain}), ChangeType, InitiatedBy\n| project TimeGenerated, ChangeType, Count, InitiatedBy",
+              "size": 0,
+              "title": "Changes Timeline",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Added",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Removed",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "70",
+            "name": "chart-timeline-g2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": " let Chart = IdentityInfo\r\n | where TimeGenerated >= ago(30d)\r\n    | where GroupMembership contains \"360T Prod SSO\"\r\n    | summarize make_set(Department), make_list(JobTitle),count() by AccountUPN;\r\nChart\r\n| summarize count() by tostring(set_Department)\r\n| extend DeptString = replace(@'[\\[\\]\"]', \"\", tostring(set_Department))\r\n| extend Department = iff(DeptString =~ \"\", \"Unlisted\",DeptString)\r\n| project Department, count_",
+              "size": 3,
+              "aggregation": 4,
+              "title": "Group Department Distribution",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "customWidth": "30",
+            "name": "query - 4",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let GroupId = \"0bc6a87d-b1b5-4edf-a496-33d4dadf8ac9\";\r\nlet BaseData = AuditLogs\r\n| where TimeGenerated > ago({TimeRange:seconds}s)\r\n| where tostring(TargetResources[1].id) == GroupId\r\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\r\n| extend Initiator = coalesce(\r\n    tostring(InitiatedBy.user.userPrincipalName), \r\n    tostring(InitiatedBy.app.displayName), \r\n    \"System\")\r\n| extend InitiatorIP = tostring(InitiatedBy.user.ipAddress)\r\n| where Initiator !contains \"sync\"\r\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\r\n| extend OldValue = tostring(TargetResources[0].modifiedProperties[1].oldValue)\r\n| extend NewValue = tostring(TargetResources[0].modifiedProperties[1].newValue)\r\n| extend MemberChanged = trim('\"', coalesce(NewValue, OldValue))\r\n| extend Target = tostring(TargetResources[0].userPrincipalName);\r\nlet Stats = BaseData\r\n| summarize \r\n    AddedCount = countif(ChangeType == \"Added\"), \r\n    RemovedCount = countif(ChangeType == \"Removed\"), \r\n    TotalChanges = count()\r\n    by Initiator;\r\nBaseData\r\n| join kind=leftouter Stats on Initiator\r\n| order by TimeGenerated desc\r\n| project\r\n    TimeGenerated,\r\n    ChangeType,\r\n    Target,\r\n    Initiator,\r\n    InitiatorIP,\r\n    TotalAddedbyInitiator = AddedCount,\r\n    TotalRemovedbyInitiator = RemovedCount,\r\n    TotalChangesbyInitiator = TotalChanges",
+              "size": 0,
+              "title": "Detailed Change Log with Initiator Stats",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ChangeType",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Added",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Removed",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalAddedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "green"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalRemovedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "red"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalChangesbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "IdentityInfo\r\n| where TimeGenerated >= ago(30d)\r\n| where GroupMembership contains \"360T Prod SSO\"\r\n| summarize count() by AccountUPN, JobTitle, Department, Group = \"360T Prod SSO\"\r\n| project-away count_",
+              "size": 0,
+              "title": "Group List of Members",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "gridSettings": {
+                "filter": true,
+                "hierarchySettings": {
+                  "treeType": 1,
+                  "groupBy": [
+                    "Group",
+                    "AccountUPN"
+                  ],
+                  "expandTopLevel": false
+                }
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "group2"
+      },
+      "name": "group2-section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Application Sign-In Activity\n---"
+            },
+            "name": "subheading-group-activity - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"FIS - Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nlet CountryCoords = datatable(CountryCode:string, DefaultLat:real, DefaultLon:real)\r\n[\r\n    \"CN\", 35.8617, 104.1954,\r\n    \"GB\", 51.5074, -0.1278,\r\n    \"US\", 37.0902, -95.7129,\r\n    \"DE\", 51.1657, 10.4515,\r\n    \"FR\", 46.2276, 2.2137,\r\n    \"IN\", 20.5937, 78.9629,\r\n    \"AU\", -25.2744, 133.7751,\r\n    \"JP\", 36.2048, 138.2529,\r\n    \"SG\", 1.3521, 103.8198,\r\n    \"HK\", 22.3193, 114.1694,\r\n    \"NL\", 52.1326, 5.2913,\r\n    \"IE\", 53.1424, -7.6921\r\n];\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend RawLatitude = toreal(Location.geoCoordinates.latitude)\r\n| extend RawLongitude = toreal(Location.geoCoordinates.longitude)\r\n| extend City = tostring(Location.city)\r\n| extend State = tostring(Location.state)\r\n| extend CountryOrRegion = tostring(Location.countryOrRegion)\r\n| join kind=leftouter CountryCoords on $left.CountryOrRegion == $right.CountryCode\r\n| extend Latitude = iff(isempty(RawLatitude), DefaultLat, RawLatitude)\r\n| extend Longitude = iff(isempty(RawLongitude), DefaultLon, RawLongitude)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=leftouter IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by Latitude, Longitude, City, State, CountryOrRegion, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", tostring(CountryOrRegion)), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| where isnotempty(Latitude) and isnotempty(Longitude)\r\n| sort by Events desc",
+              "size": 3,
+              "title": "FIS Sign-in Map",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "map",
+              "mapSettings": {
+                "locInfo": "LatLong",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "sizeSettings": "Latitude",
+                "sizeAggregation": "Sum",
+                "labelSettings": "City",
+                "legendMetric": "Events",
+                "legendAggregation": "Average",
+                "itemColorSettings": {
+                  "nodeColorField": "Latitude",
+                  "colorAggregation": "Sum",
+                  "type": "heatmap",
+                  "heatmapPalette": "greenRed"
+                }
+              }
+            },
+            "customWidth": "55",
+            "name": "signin-map-g1",
+            "styleSettings": {
+              "margin": "0"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"FIS - Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 3,
+              "title": "Events Per User",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "scatterchart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "AppDisplayName",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "ASN_SuccessCount",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "graphSettings": {
+                "type": 0,
+                "topContent": {
+                  "columnMatch": "AppDisplayName",
+                  "formatter": 1
+                },
+                "centerContent": {
+                  "columnMatch": "ASN_SuccessCount",
+                  "formatter": 1,
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "xAxis": "UserLoc_IPLoc",
+                "yAxis": [
+                  "Events"
+                ],
+                "group": "UserPrincipalName",
+                "createOtherGroup": null,
+                "showMetrics": false,
+                "showLegend": true,
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "FIS - Production",
+                    "color": "orange"
+                  }
+                ]
+              }
+            },
+            "customWidth": "45",
+            "showPin": false,
+            "name": "activity-by-dept-g1",
+            "styleSettings": {
+              "maxWidth": "45"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"FIS - Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(90d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 0,
+              "title": "FIS Sign-in Details",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ASN_SuccessCount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "blue"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "Result",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "SUCCESS",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "FAILURE",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TrustDev",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Managed",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unmanaged",
+                          "representation": "orange",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "CredsLeaked",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "false",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "Events",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "signin-table-g1"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Group Activity\n---"
+            },
+            "customWidth": "100",
+            "name": "subheading-group-activity",
+            "styleSettings": {
+              "margin": "50",
+              "padding": "20"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AuditLogs\n| where TimeGenerated > ago({TimeRange:seconds}s)\n| where tostring(TargetResources[1].id) == \"d58d90ff-8654-40c1-bde0-94222c6487c3\"\n| extend InitiatedBy = coalesce(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName), \"System\")\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\n| summarize Count = count() by bin(TimeGenerated, {TimeRange:grain}), ChangeType, InitiatedBy\n| project TimeGenerated, ChangeType, Count, InitiatedBy",
+              "size": 0,
+              "title": "Changes Timeline",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Added",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Removed",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "70",
+            "name": "chart-timeline-g1"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": " let Chart = IdentityInfo\r\n    | where TimeGenerated > ago(30d)\r\n    | where GroupMembership contains \"FIS - Production\"\r\n    | summarize make_set(Department), make_list(JobTitle),count() by AccountUPN;\r\nChart\r\n| summarize count() by tostring(set_Department)\r\n| extend DeptString = replace(@'[\\[\\]\"]', \"\", tostring(set_Department))\r\n| extend Department = iff(DeptString =~ \"\", \"Unlisted\",DeptString)\r\n| project Department, count_",
+              "size": 3,
+              "aggregation": 4,
+              "title": "Group Department Distribution",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart",
+              "chartSettings": {
+                "yAxis": [
+                  "count_"
+                ],
+                "group": "Department",
+                "createOtherGroup": null
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 4",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let GroupId = \"d58d90ff-8654-40c1-bde0-94222c6487c3\";\r\nlet BaseData = AuditLogs\r\n| where TimeGenerated > ago({TimeRange:seconds}s)\r\n| where tostring(TargetResources[1].id) == GroupId\r\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\r\n| extend Initiator = coalesce(\r\n    tostring(InitiatedBy.user.userPrincipalName), \r\n    tostring(InitiatedBy.app.displayName), \r\n    \"System\")\r\n| extend InitiatorIP = tostring(InitiatedBy.user.ipAddress)\r\n| where Initiator !contains \"sync\"\r\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\r\n| extend OldValue = tostring(TargetResources[0].modifiedProperties[1].oldValue)\r\n| extend NewValue = tostring(TargetResources[0].modifiedProperties[1].newValue)\r\n| extend MemberChanged = trim('\"', coalesce(NewValue, OldValue))\r\n| extend Target = tostring(TargetResources[0].userPrincipalName);\r\nlet Stats = BaseData\r\n| summarize \r\n    AddedCount = countif(ChangeType == \"Added\"), \r\n    RemovedCount = countif(ChangeType == \"Removed\"), \r\n    TotalChanges = count()\r\n    by Initiator;\r\nBaseData\r\n| join kind=leftouter Stats on Initiator\r\n| order by TimeGenerated desc\r\n| project\r\n    TimeGenerated,\r\n    ChangeType,\r\n    Target,\r\n    Initiator,\r\n    InitiatorIP,\r\n    TotalAddedbyInitiator = AddedCount,\r\n    TotalRemovedbyInitiator = RemovedCount,\r\n    TotalChangesbyInitiator = TotalChanges",
+              "size": 0,
+              "title": "Detailed Change Log with Initiator Stats",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ChangeType",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Added",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Removed",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalAddedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "green"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalRemovedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "red"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalChangesbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "IdentityInfo\r\n| where TimeGenerated > ago(30d)\r\n| where GroupMembership contains \"FIS - Production\"\r\n| summarize count() by AccountUPN, JobTitle, Department, Group = \"FIS - Production\"\r\n| project-away count_",
+              "size": 0,
+              "title": "Group List of Members",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "gridSettings": {
+                "filter": true,
+                "hierarchySettings": {
+                  "treeType": 1,
+                  "groupBy": [
+                    "Group",
+                    "AccountUPN"
+                  ],
+                  "expandTopLevel": false
+                }
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "group1"
+      },
+      "name": "group1-section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Application Sign-In Activity\n---"
+            },
+            "name": "subheading-group-activity - Copy - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"ICD Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nlet CountryCoords = datatable(CountryCode:string, DefaultLat:real, DefaultLon:real)\r\n[\r\n    \"CN\", 35.8617, 104.1954,\r\n    \"GB\", 51.5074, -0.1278,\r\n    \"US\", 37.0902, -95.7129,\r\n    \"DE\", 51.1657, 10.4515,\r\n    \"FR\", 46.2276, 2.2137,\r\n    \"IN\", 20.5937, 78.9629,\r\n    \"AU\", -25.2744, 133.7751,\r\n    \"JP\", 36.2048, 138.2529,\r\n    \"SG\", 1.3521, 103.8198,\r\n    \"HK\", 22.3193, 114.1694,\r\n    \"NL\", 52.1326, 5.2913,\r\n    \"IE\", 53.1424, -7.6921\r\n];\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend RawLatitude = toreal(Location.geoCoordinates.latitude)\r\n| extend RawLongitude = toreal(Location.geoCoordinates.longitude)\r\n| extend City = tostring(Location.city)\r\n| extend State = tostring(Location.state)\r\n| extend CountryOrRegion = tostring(Location.countryOrRegion)\r\n| join kind=leftouter CountryCoords on $left.CountryOrRegion == $right.CountryCode\r\n| extend Latitude = iff(isempty(RawLatitude), DefaultLat, RawLatitude)\r\n| extend Longitude = iff(isempty(RawLongitude), DefaultLon, RawLongitude)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=leftouter IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by Latitude, Longitude, City, State, CountryOrRegion, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", tostring(CountryOrRegion)), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| where isnotempty(Latitude) and isnotempty(Longitude)\r\n| sort by Events desc",
+              "size": 3,
+              "title": "ICD Sign-in Map",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "map",
+              "mapSettings": {
+                "locInfo": "LatLong",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "sizeSettings": "Latitude",
+                "sizeAggregation": "Sum",
+                "labelSettings": "City",
+                "legendMetric": "Events",
+                "legendAggregation": "Average",
+                "itemColorSettings": {
+                  "nodeColorField": "Latitude",
+                  "colorAggregation": "Sum",
+                  "type": "heatmap",
+                  "heatmapPalette": "greenRed"
+                }
+              }
+            },
+            "customWidth": "60",
+            "name": "signin-map-g4",
+            "styleSettings": {
+              "margin": "10px auto",
+              "maxWidth": "60"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"ICD Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(30d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 3,
+              "title": "Events Per User",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "scatterchart",
+              "chartSettings": {
+                "xAxis": "UserLoc_IPLoc",
+                "yAxis": [
+                  "Events"
+                ],
+                "group": "UserPrincipalName",
+                "createOtherGroup": null,
+                "showMetrics": false,
+                "showLegend": true
+              }
+            },
+            "customWidth": "40",
+            "name": "activity-by-dept-g4",
+            "styleSettings": {
+              "maxWidth": "40"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let apps = dynamic([\"ICD Production\"]);\r\nlet x = SigninLogs\r\n| where AppDisplayName in (apps)\r\n| project UserPrincipalName;\r\nlet y = SigninLogs\r\n| where UserPrincipalName in (x)\r\n| where ResultType == \"0\"\r\n| where TimeGenerated >= ago(90d)\r\n| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;\r\nlet lookback = 30d;\r\nlet leak = SecurityAlert\r\n| where TimeGenerated >= ago(14d)\r\n| where AlertName contains \"Leaked\"\r\n| extend parse_json(tostring(Entities))\r\n| extend leaked = iff(Status != \"\",\"true\",\"N/A\")\r\n| where isnotempty(leaked)\r\n| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked\r\n| distinct leaked_user = tostring(user);\r\nunion SigninLogs, AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated >= ago(lookback)\r\n| where UserPrincipalName in (x)\r\n| where AppDisplayName in (apps)\r\n| extend leaked = UserPrincipalName in (leak)\r\n| extend size = substring(UserAgent,0,11)\r\n| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails\r\n| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)\r\n| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)\r\n| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)\r\n| extend TrustDev = iff(tostring(DeviceDetail.trustType) != \"\" , \"Managed\",\"Unmanaged\")\r\n| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]\r\n| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]\r\n| extend AuthReq = iif(AuthenticationRequirement contains \"singleFactorAuthentication\", \"SFA\", \"MFA\")\r\n| extend Result = iif(ResultType != \"0\", strcat(\"FAILURE | \", tostring(ResultType), \" | \", tostring(ResultDescription)), \"SUCCESS\")\r\n| extend ASN_IP = strcat(\"AS\", tostring(AutonomousSystemNumber), \" | \", IPAddress)\r\n| extend Device = strcat(tostring(DeviceDetail.browser),\" - \", tostring(DeviceDetail.operatingSystem),\" - \", size,\" - \", tostring(DeviceDetail.displayName))\r\n| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN\r\n| join kind=leftouter (_GetWatchlist('Alpha2') | project Land = [\"Land\"], Alpha2 = [\"Alpha2\"]) on $left.Country == $right.Land\r\n| extend loc = iff(Country == Land, Alpha2, \"\")\r\n| join kind=leftouter y on UserPrincipalName, AutonomousSystemNumber\r\n| summarize Events = count() by TimeGenerated, AppDisplayName, UserPrincipalName, UserLoc_IPLoc = strcat(iff(isempty(loc), \"N/A\", loc),\" -> \", Location.countryOrRegion), ASN_IP, ASN_SuccessCount, Result, Device, TrustDev, NetworkLocationDetails = strcat(net1, \" - \", net2), Auth_CAP = strcat(tostring(AuthReq),\" - \", tostring(ConditionalAccessStatus)), Department_Role = strcat(tostring(JobTitle),\" - \", tostring(Department)), CredsLeaked = leaked\r\n| sort by TimeGenerated asc",
+              "size": 0,
+              "title": "ICD Sign-in Details",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Result",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "SUCCESS",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "FAILURE",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TrustDev",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Managed",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Unmanaged",
+                          "representation": "orange",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "CredsLeaked",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "redBright",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "false",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "gray",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "ASN_SuccessCount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "blue"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "Events",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "name": "signin-table-g4"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\n## Group Activity\n---"
+            },
+            "name": "subheading-group-activity - Copy"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AuditLogs\n| where TimeGenerated > ago({TimeRange:seconds}s)\n| where tostring(TargetResources[1].id) == \"93f64530-9d25-4325-ba1c-d7c8605e070a\"\n| extend InitiatedBy = coalesce(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName), \"System\")\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\n| summarize Count = count() by bin(TimeGenerated, {TimeRange:grain}), ChangeType, InitiatedBy\n| project TimeGenerated, ChangeType, Count, InitiatedBy",
+              "size": 0,
+              "title": "Changes Timeline",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "barchart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Added",
+                    "color": "green"
+                  },
+                  {
+                    "seriesName": "Removed",
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "customWidth": "70",
+            "name": "chart-timeline-g4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let Chart = IdentityInfo\r\n| where TimeGenerated >= ago(30d)\r\n    | where GroupMembership contains \"SSO ICD Production\"\r\n    | summarize make_set(Department), make_list(JobTitle),count() by AccountUPN;\r\nChart\r\n| summarize count() by tostring(set_Department)\r\n| extend DeptString = replace(@'[\\[\\]\"]', \"\", tostring(set_Department))\r\n| extend Department = iff(DeptString =~ \"\", \"Unlisted\",DeptString)\r\n| project Department, count_",
+              "size": 3,
+              "aggregation": 4,
+              "title": "Group Department Distribution",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "customWidth": "30",
+            "name": "query - 4",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let GroupId = \"93f64530-9d25-4325-ba1c-d7c8605e070a\";\r\nlet BaseData = AuditLogs\r\n| where TimeGenerated > ago({TimeRange:seconds}s)\r\n| where tostring(TargetResources[1].id) == GroupId\r\n| where OperationName in (\"Add member to group\", \"Remove member from group\")\r\n| extend Initiator = coalesce(\r\n    tostring(InitiatedBy.user.userPrincipalName), \r\n    tostring(InitiatedBy.app.displayName), \r\n    \"System\")\r\n| extend InitiatorIP = tostring(InitiatedBy.user.ipAddress)\r\n| where Initiator !contains \"sync\"\r\n| extend ChangeType = iff(OperationName == \"Add member to group\", \"Added\", \"Removed\")\r\n| extend OldValue = tostring(TargetResources[0].modifiedProperties[1].oldValue)\r\n| extend NewValue = tostring(TargetResources[0].modifiedProperties[1].newValue)\r\n| extend MemberChanged = trim('\"', coalesce(NewValue, OldValue))\r\n| extend Target = tostring(TargetResources[0].userPrincipalName);\r\nlet Stats = BaseData\r\n| summarize \r\n    AddedCount = countif(ChangeType == \"Added\"), \r\n    RemovedCount = countif(ChangeType == \"Removed\"), \r\n    TotalChanges = count()\r\n    by Initiator;\r\nBaseData\r\n| join kind=leftouter Stats on Initiator\r\n| order by TimeGenerated desc\r\n| project\r\n    TimeGenerated,\r\n    ChangeType,\r\n    Target,\r\n    Initiator,\r\n    InitiatorIP,\r\n    TotalAddedbyInitiator = AddedCount,\r\n    TotalRemovedbyInitiator = RemovedCount,\r\n    TotalChangesbyInitiator = TotalChanges",
+              "size": 0,
+              "title": "Detailed Change Log with Initiator Stats",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ChangeType",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "colors",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Added",
+                          "representation": "green",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Removed",
+                          "representation": "red",
+                          "text": "{0}{1}"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "blue",
+                          "text": "{0}{1}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalAddedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "green"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalRemovedbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "red"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  },
+                  {
+                    "columnMatch": "TotalChangesbyInitiator",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "min": 0,
+                      "palette": "purple"
+                    },
+                    "numberFormat": {
+                      "unit": 17,
+                      "options": {
+                        "style": "decimal"
+                      }
+                    }
+                  }
+                ],
+                "filter": true
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "IdentityInfo\r\n| where TimeGenerated >= ago(30d)\r\n| where GroupMembership contains \"SSO ICD Production\"\r\n| summarize count() by AccountUPN, JobTitle, Department, Group = \"SSO ICD Production\"\r\n| project-away count_",
+              "size": 0,
+              "title": "Group List of Members",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "gridSettings": {
+                "filter": true,
+                "hierarchySettings": {
+                  "treeType": 1,
+                  "groupBy": [
+                    "Group",
+                    "AccountUPN"
+                  ],
+                  "expandTopLevel": false
+                }
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "100"
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "group4"
+      },
+      "name": "group4-section"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "---\r\n### Geo-Mismatch Sign in into Treasury App\r\n---"
+            },
+            "name": "text - 1"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"Geo-Mismatch Sign in into Treasury App\"\r\n| where isnotempty(Classification)\r\n| distinct Classification, ProviderIncidentId\r\n| summarize count() by Classification, ProviderIncidentId",
+              "size": 3,
+              "title": "Verdict History",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "customWidth": "30",
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"Geo-Mismatch Sign in into Treasury App\"\r\n|extend Date = format_datetime(TimeGenerated,'yy-MM-dd')\r\n| distinct ProviderIncidentId, Date, Classification\r\n| summarize count() by Date, Classification, ProviderIncidentId\r\n| where isnotempty(Classification)",
+              "size": 0,
+              "title": "Alert Timeline",
+              "timeContext": {
+                "durationMs": 43200000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart"
+            },
+            "customWidth": "70",
+            "name": "query - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Title contains \"Geo-Mismatch Sign in into Treasury App\"",
+              "size": 0,
+              "title": "Incident Trigger Details",
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 0"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\r\n### User Added to Sensitive Treasury Group\r\n---"
+            },
+            "name": "text - 4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"User Added to Sensitive Treasury Group\"\r\n| where isnotempty(Classification)\r\n| distinct Classification, ProviderIncidentId\r\n| summarize count() by Classification, ProviderIncidentId",
+              "size": 3,
+              "title": "Verdict History",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart",
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "BenignPositive",
+                    "color": "orange"
+                  }
+                ]
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"User Added to Sensitive Treasury Group\"\r\n|extend Date = format_datetime(TimeGenerated,'yy-MM-dd')\r\n| distinct ProviderIncidentId, Date, Classification\r\n| summarize count() by Date, Classification, ProviderIncidentId\r\n| where isnotempty(Classification)",
+              "size": 0,
+              "title": "Alert Timeline",
+              "color": "orange",
+              "timeContext": {
+                "durationMs": 43200000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "chartSettings": {
+                "showMetrics": false,
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "26-02-10",
+                    "color": "orange"
+                  }
+                ]
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 6"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Title contains \"User Added to Sensitive Treasury Group\"",
+              "size": 0,
+              "title": "Incident Trigger Details",
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 7"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "---\r\n### Sensitive Conditional Access Policy Updated Associated With Treasury App Access\r\n---"
+            },
+            "name": "text - 8"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"Sensitive Conditional Access Policy Updated Associated With Treasury App Access\"\r\n| where isnotempty(Classification)\r\n| distinct Classification, ProviderIncidentId\r\n| summarize count() by Classification, ProviderIncidentId",
+              "size": 3,
+              "title": "Verdict History",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart",
+              "sortBy": [],
+              "chartSettings": {
+                "seriesLabelSettings": [
+                  {
+                    "seriesName": "Classification",
+                    "label": "Alerts"
+                  },
+                  {
+                    "seriesName": "New",
+                    "color": "blue"
+                  },
+                  {
+                    "seriesName": "BenignPositive",
+                    "color": "blueDark"
+                  },
+                  {
+                    "seriesName": "TruePositive",
+                    "color": "redDark"
+                  },
+                  {
+                    "seriesName": "FalsePositive",
+                    "color": "gray"
+                  }
+                ]
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 9"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where TimeGenerated >= ago(90d)\r\n| where Title contains \"Sensitive Conditional Access Policy Updated Associated With Treasury App Access\"\r\n|extend Date = format_datetime(TimeGenerated,'yy-MM-dd')\r\n| distinct ProviderIncidentId, Date, Classification\r\n| summarize count() by Date, Classification, ProviderIncidentId\r\n| where isnotempty(Classification)",
+              "size": 0,
+              "title": "Alert Timeline",
+              "color": "blueDark",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "tileSettings": {
+                "showBorder": false,
+                "titleContent": {
+                  "columnMatch": "Date",
+                  "formatter": 1
+                },
+                "leftContent": {
+                  "columnMatch": "count_",
+                  "formatter": 12,
+                  "formatOptions": {
+                    "palette": "auto"
+                  },
+                  "numberFormat": {
+                    "unit": 17,
+                    "options": {
+                      "maximumSignificantDigits": 3,
+                      "maximumFractionDigits": 2
+                    }
+                  }
+                }
+              },
+              "chartSettings": {
+                "xAxis": "Date",
+                "group": null,
+                "createOtherGroup": 0,
+                "showMetrics": false
+              }
+            },
+            "customWidth": "70",
+            "name": "query - 10"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Title contains \"Sensitive Conditional Access Policy Updated Associated With Treasury App Access\"\r\n| sort by TimeGenerated desc",
+              "size": 0,
+              "title": "Incident Trigger Details",
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "ProviderIncidentId",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "ProviderIncidentId",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "name": "query - 11"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "Alerts"
+      },
+      "name": "Alerts"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
