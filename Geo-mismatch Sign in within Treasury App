@@ -1,0 +1,66 @@
+let apps = dynamic(["360T - Prod","FIS - Production","ICD Production","Finastra - Prod"]);
+let users = SigninLogs
+| where AppDisplayName in (apps)
+| project UserPrincipalName;
+let asn = SigninLogs
+| where UserPrincipalName in (users)
+| where ResultType == "0"
+| where TimeGenerated >= ago(90d)
+| summarize ASN_SuccessCount = count() by UserPrincipalName, AutonomousSystemNumber;
+// Lookback and leaked users
+let lookback = 30d;
+let leak = SecurityAlert
+| where TimeGenerated >= ago(14d)
+| where AlertName contains "Leaked"
+| extend parse_json(tostring(Entities))
+| extend leaked = iff(Status != "","true","N/A")
+| where isnotempty(leaked)
+| project user = Entities[0].UserPrincipalName, TimeGenerated, leaked
+| distinct leaked_user = tostring(user);
+//
+union SigninLogs, AADNonInteractiveUserSignInLogs
+| where TimeGenerated >= ago(lookback)
+| where UserPrincipalName in (users)
+| where AppDisplayName in (apps)
+| extend leaked = UserPrincipalName in (leak)
+| extend size = substring(UserAgent,0,11)
+| extend AuthenticationDetails = parse_json(AuthenticationDetails) | mv-expand AuthenticationDetails
+| extend DeviceDetail = iff(isempty(DeviceDetail_dynamic), parse_json(DeviceDetail_string), DeviceDetail_dynamic)
+| extend Location = iff(isempty(LocationDetails_dynamic), parse_json(LocationDetails_string), LocationDetails_dynamic)
+| extend auth = tostring(AuthenticationDetails.authenticationStepResultDetail)
+| extend TrustDev = iff(tostring(DeviceDetail.trustType) != "" , "Managed","Unmanaged")
+| extend net1 = parse_json(tostring(parse_json(NetworkLocationDetails)[0].networkNames))[0]
+| extend net2 = parse_json(tostring(parse_json(NetworkLocationDetails)[1].networkNames))[0]
+| extend AuthReq = iif(AuthenticationRequirement contains "singleFactorAuthentication", "SFA", "MFA")
+| extend Result = iif(ResultType != "0",
+                      strcat("FAILURE | ", tostring(ResultType), " | ", tostring(ResultDescription)),
+                      "SUCCESS")
+| extend ASN_IP = strcat("AS", tostring(AutonomousSystemNumber), " | ", IPAddress)
+| extend Device = strcat(tostring(DeviceDetail.browser)," - ",
+                         tostring(DeviceDetail.operatingSystem)," - ",
+                         size," - ", tostring(DeviceDetail.displayName))
+| join kind=inner IdentityInfo on $left.UserPrincipalName == $right.AccountUPN
+| join kind=leftouter (
+      _GetWatchlist('Alpha2')
+      | project Land = ["Land"], Alpha2 = ["Alpha2"]
+) on $left.Country == $right.Land
+| extend loc = iff(Country == Land, Alpha2, "")
+| join kind=leftouter asn on UserPrincipalName, AutonomousSystemNumber
+| summarize Events = count() by 
+    TimeGenerated,
+    AppDisplayName,
+    UserPrincipalName,
+    UserLoc = iff(isempty(loc), "N/A", loc),
+    IPLoc = iff(isempty(Location.countryOrRegion), "N/A", Location.countryOrRegion),
+    ASN_IP,
+    ASN_SuccessCount,
+    Result,
+    Device,
+    TrustDev,
+    NetworkLocationDetails = strcat(net1, " - ", net2),
+    Auth_CAP = strcat(tostring(AuthReq)," - ", tostring(ConditionalAccessStatus)),
+    Department_Role = strcat(tostring(JobTitle)," - ", tostring(Department)),
+    //AuthenticationAppDeviceDetails,
+    CredsLeaked = leaked
+| sort by TimeGenerated asc 
+| where UserLoc != IPLoc and ASN_SuccessCount <= 5 and Result == "SUCCESS"
