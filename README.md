@@ -1,4 +1,13 @@
-Dashboard
+Detections
+Geo-mismatch Sign in within Treasury App
+
+User Added to Sensitive Treasury Group
+
+Sensitive Conditional Access Policy Updated Associated With Treasury App Access
+
+
+Dashboard Tracking
+Designed for client and secops utilisation 
 
 Sign-in Activity Monitoring
 
