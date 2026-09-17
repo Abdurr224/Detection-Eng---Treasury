@@ -1,12 +1,14 @@
 Detections
-Geo-mismatch Sign in within Treasury App
 
-User Added to Sensitive Treasury Group
+- Geo-mismatch Sign in within Treasury App (P1)
 
-Sensitive Conditional Access Policy Updated Associated With Treasury App Access
+- User Added to Sensitive Treasury Group (P2)
+
+- Sensitive Conditional Access Policy Updated Associated With Treasury App Access (P2)
 
 
 Dashboard Tracking
+
 Designed for client and secops utilisation 
 
 Sign-in Activity Monitoring
